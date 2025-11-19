@@ -10,22 +10,24 @@ namespace ProjetoResenha.Controllers
     public class AutorController : ControllerBase
     {
         private readonly AppDbContext _context;
-
-        public AutorController(AppDbContext context)
-        {
-            _context = context;
-        }
+        public AutorController(AppDbContext context) => _context = context;
 
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
-            return Ok(await _context.Autores.ToListAsync());
+            var autores = await _context.Autores
+                .AsNoTracking()
+                .ToListAsync();
+            return Ok(autores);
         }
 
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(int id)
         {
-            var autor = await _context.Autores.FindAsync(id);
+            var autor = await _context.Autores
+                .AsNoTracking()
+                .FirstOrDefaultAsync(a => a.pkid_autor_prop == id);
+
             if (autor == null) return NotFound();
             return Ok(autor);
         }
@@ -35,7 +37,7 @@ namespace ProjetoResenha.Controllers
         {
             _context.Autores.Add(autor);
             await _context.SaveChangesAsync();
-            return CreatedAtAction(nameof(GetById), new { id = autor.getPkid_autor() }, autor);
+            return CreatedAtAction(nameof(GetById), new { id = autor.pkid_autor_prop }, autor);
         }
 
         [HttpPut("{id}")]
@@ -44,9 +46,9 @@ namespace ProjetoResenha.Controllers
             var autor = await _context.Autores.FindAsync(id);
             if (autor == null) return NotFound();
 
-            autor.setNome(request.getNome());
-            autor.setNacionalidade(request.getNacionalidade());
-            autor.setData_nascimento(request.GetDateTime());
+            autor.nome_prop = request.nome_prop;
+            autor.nacionalidade_prop = request.nacionalidade_prop;
+            autor.data_nascimento_prop = request.data_nascimento_prop;
 
             await _context.SaveChangesAsync();
             return Ok(autor);
@@ -60,7 +62,6 @@ namespace ProjetoResenha.Controllers
 
             _context.Autores.Remove(autor);
             await _context.SaveChangesAsync();
-
             return NoContent();
         }
     }

@@ -2,7 +2,6 @@
 using Microsoft.EntityFrameworkCore;
 using Projeto_Resenha.Dominio1;
 using ProjetoResenha.Data;
-using ProjetoResenha.Models;
 
 namespace ProjetoResenha.Controllers
 {
@@ -11,21 +10,17 @@ namespace ProjetoResenha.Controllers
     public class ResenhaController : ControllerBase
     {
         private readonly AppDbContext _context;
-
-        public ResenhaController(AppDbContext context)
-        {
-            _context = context;
-        }
+        public ResenhaController(AppDbContext context) => _context = context;
 
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
             var lista = await _context.Resenhas
+                .AsNoTracking()
                 .Include(r => r.Usuario)
                 .Include(r => r.Livro)
-                .ThenInclude(l => l.Autor)
+                    .ThenInclude(l => l.Autor)
                 .ToListAsync();
-
             return Ok(lista);
         }
 
@@ -33,22 +28,28 @@ namespace ProjetoResenha.Controllers
         public async Task<IActionResult> GetById(int id)
         {
             var resenha = await _context.Resenhas
+                .AsNoTracking()
                 .Include(r => r.Usuario)
                 .Include(r => r.Livro)
-                .ThenInclude(l => l.Autor)
-                .FirstOrDefaultAsync(r => r.getPkId_resenha() == id);
+                    .ThenInclude(l => l.Autor)
+                .FirstOrDefaultAsync(r => r.pkid_resenha_prop == id);
 
             if (resenha == null) return NotFound();
-
             return Ok(resenha);
         }
 
         [HttpPost]
         public async Task<IActionResult> Create(Resenha resenha)
         {
+            
+            if (resenha.pkid_resenha_prop == 0 && resenha.conteudo_prop != null && resenha.Usuario == null)
+            {
+                
+            }
+
             _context.Resenhas.Add(resenha);
             await _context.SaveChangesAsync();
-            return CreatedAtAction(nameof(GetById), new { id = resenha.getPkId_resenha() }, resenha);
+            return CreatedAtAction(nameof(GetById), new { id = resenha.pkid_resenha_prop }, resenha);
         }
 
         [HttpPut("{id}")]
@@ -57,10 +58,10 @@ namespace ProjetoResenha.Controllers
             var resenha = await _context.Resenhas.FindAsync(id);
             if (resenha == null) return NotFound();
 
-            resenha.setFkId_usuario(request.getFkId_usuario());
-            resenha.setFkId_livro(request.getFkId_livro());
-            resenha.setTitulo(request.getTitulo());
-            resenha.setResenha(request.getResenha());
+            resenha.fk_usuario_prop = request.fk_usuario_prop;
+            resenha.fk_livro_prop = request.fk_livro_prop;
+            resenha.titulo_prop = request.titulo_prop;
+            resenha.conteudo_prop = request.conteudo_prop;
 
             await _context.SaveChangesAsync();
             return Ok(resenha);
@@ -74,7 +75,6 @@ namespace ProjetoResenha.Controllers
 
             _context.Resenhas.Remove(resenha);
             await _context.SaveChangesAsync();
-
             return NoContent();
         }
     }
